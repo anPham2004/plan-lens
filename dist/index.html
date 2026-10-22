@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Dashboard so sánh kế hoạch sản xuất từ Excel, xử lý ngay trên trình duyệt." />
+    <title>Plan Lens — Dashboard kế hoạch sản xuất</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script defer src="./app.js"></script>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="Plan Lens">
+          <span class="brand-mark"><i></i><i></i><i></i></span>
+          <span>Plan<span>Lens</span></span>
+        </a>
+        <div class="topbar-meta"><span class="dot"></span> Xử lý cục bộ trên trình duyệt</div>
+      </header>
+
+      <section class="hero" id="top">
+        <div>
+          <p class="eyebrow">PRODUCTION PLANNING / BẢN MẪU</p>
+          <h1>Nhìn thấy thay đổi.<br /><em>Ra quyết định nhanh hơn.</em></h1>
+          <p class="hero-copy">Nhập file kế hoạch Excel, chọn hai sheet và theo dõi những thay đổi thực sự quan trọng — model mới, biến mất, đổi số lượng, pull in và push out.</p>
+        </div>
+        <div class="hero-note">
+          <span class="note-icon">↗</span>
+          <div><strong>Không tải dữ liệu lên server</strong><br />File được đọc và xử lý ngay trên thiết bị của bạn.</div>
+        </div>
+      </section>
+
+      <section class="upload-panel" aria-labelledby="upload-title">
+        <div class="panel-heading">
+          <div><p class="step">01 / NHẬP DỮ LIỆU</p><h2 id="upload-title">Bắt đầu với file kế hoạch</h2></div>
+          <span class="format-chip">.XLSX</span>
+        </div>
+        <label class="dropzone" id="dropzone" for="file-input">
+          <input id="file-input" type="file" accept=".xlsx,.xls" />
+          <span class="upload-icon">↑</span>
+          <span><strong>Kéo thả file Excel vào đây</strong><small>hoặc bấm để chọn file từ máy</small></span>
+          <span class="browse">Chọn file</span>
+        </label>
+        <p class="file-status" id="file-status">Chưa có file nào được chọn — dashboard đang hiển thị dữ liệu minh hoạ.</p>
+        <div class="sheet-controls" id="sheet-controls" hidden>
+          <label>Sheet cũ <select id="previous-sheet"></select></label>
+          <label>Sheet mới <select id="current-sheet"></select></label>
+          <button class="primary-btn" id="analyze-button">Phân tích kế hoạch <span>→</span></button>
+        </div>
+      </section>
+
+      <section class="dashboard-head">
+        <div>
+          <p class="step">02 / TỔNG QUAN</p>
+          <h2>Thay đổi kế hoạch <span id="comparison-label">01-Oct → 08-Oct</span></h2>
+        </div>
+        <button class="secondary-btn" id="export-button">Tải báo cáo CSV <span>↓</span></button>
+      </section>
+
+      <section class="metrics" aria-label="Các chỉ số kế hoạch">
+        <article class="metric-card missing"><span>Model biến mất</span><strong id="missing-count">1</strong><small>không còn ở sheet mới</small></article>
+        <article class="metric-card new"><span>Model mới xuất hiện</span><strong id="new-count">2</strong><small>chưa có ở sheet cũ</small></article>
+        <article class="metric-card qty"><span>Đổi số lượng</span><strong id="quantity-count">48</strong><small>ưu tiên kiểm tra</small></article>
+        <article class="metric-card pull"><span>Pull in</span><strong id="pull-count">35</strong><small>kế hoạch được kéo sớm</small></article>
+        <article class="metric-card push"><span>Push out</span><strong id="push-count">37</strong><small>kế hoạch bị đẩy muộn</small></article>
+      </section>
+
+      <section class="insight-grid">
+        <article class="card distribution-card">
+          <div class="card-title"><div><p class="step">PHÂN BỔ THAY ĐỔI</p><h3>Điểm cần theo dõi</h3></div><span class="period" id="period-label">Dữ liệu minh hoạ</span></div>
+          <div class="distribution" id="distribution"></div>
+          <div class="legend" id="legend"></div>
+        </article>
+        <article class="card insight-card">
+          <p class="step">ĐỌC NHANH</p>
+          <h3 id="insight-title">Số lượng thay đổi cần được ưu tiên</h3>
+          <p id="insight-copy">48 model có thay đổi về Total Q'ty. Hãy dùng bảng bên dưới để lọc các mức chênh lệch lớn nhất.</p>
+          <div class="insight-stat"><span>Thay đổi nhiều nhất</span><strong id="largest-change">+18,900</strong></div>
+        </article>
+      </section>
+
+      <section class="changes-section">
+        <div class="section-top">
+          <div><p class="step">03 / CHI TIẾT</p><h2>Danh sách thay đổi</h2></div>
+          <div class="table-tools">
+            <label class="search"><span>⌕</span><input id="search-input" type="search" placeholder="Tìm model..." /></label>
+            <select id="type-filter" aria-label="Lọc loại thay đổi">
+              <option value="all">Tất cả loại thay đổi</option>
+              <option value="Đổi số lượng">Đổi số lượng</option>
+              <option value="Pull in">Pull in</option>
+              <option value="Push out">Push out</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Model</th><th>Loại thay đổi</th><th class="number">Tổng SL cũ</th><th class="number">Tổng SL mới</th><th class="number">Tăng / giảm SL</th><th class="number">Số ngày pull / push</th></tr></thead>
+              <tbody id="changes-body"></tbody>
+            </table>
+          </div>
+          <div class="table-footer"><span id="row-count">Hiển thị 12 thay đổi nổi bật</span><button id="show-all-button">Xem tất cả</button></div>
+        </div>
+      </section>
+
+      <footer>Plan Lens · Dashboard mẫu · Dữ liệu chỉ được xử lý trong trình duyệt của bạn</footer>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
