@@ -48,10 +48,10 @@ Plan Lens compares plans at the **model level**. A model moving to another line 
 
 - Drag-and-drop Excel upload
 - Previous/current sheet selection
-- Summary KPI cards for each change type
+- Summary KPI cards plus an explicit list of models that disappeared or were newly added
 - Change distribution overview
-- Searchable and filterable change table
-- CSV export for the filtered comparison result
+- Searchable and filterable change table, including missing and newly added models
+- CSV export for the complete comparison result, including missing and newly added models
 - Responsive, browser-only interface
 
 ## Run locally

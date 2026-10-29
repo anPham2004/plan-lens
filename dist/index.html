@@ -67,6 +67,27 @@
         <article class="metric-card push"><span>Push out</span><strong id="push-count">37</strong><small>kế hoạch bị đẩy muộn</small></article>
       </section>
 
+      <section class="model-events" aria-labelledby="model-events-title">
+        <div class="section-heading-inline">
+          <div><p class="step">MODEL THÊM / BỚT</p><h2 id="model-events-title">Model nào đã thay đổi?</h2></div>
+          <p>Danh sách dưới đây hiển thị chính xác từng model không còn xuất hiện hoặc vừa được bổ sung trong sheet mới.</p>
+        </div>
+        <div class="model-event-grid">
+          <article class="model-event-card disappeared">
+            <div class="event-card-heading"><div><span class="event-dot"></span><h3>Model biến mất</h3></div><strong id="missing-list-count">1</strong></div>
+            <p>Xuất hiện trong sheet cũ nhưng không còn trong sheet mới.</p>
+            <ul class="model-event-list" id="missing-list"></ul>
+            <button class="event-filter-button" data-event-type="Model biến mất">Xem trong bảng chi tiết <span>↓</span></button>
+          </article>
+          <article class="model-event-card introduced">
+            <div class="event-card-heading"><div><span class="event-dot"></span><h3>Model mới xuất hiện</h3></div><strong id="appeared-list-count">2</strong></div>
+            <p>Chưa có trong sheet cũ và vừa được bổ sung ở sheet mới.</p>
+            <ul class="model-event-list" id="appeared-list"></ul>
+            <button class="event-filter-button" data-event-type="Model mới xuất hiện">Xem trong bảng chi tiết <span>↓</span></button>
+          </article>
+        </div>
+      </section>
+
       <section class="insight-grid">
         <article class="card distribution-card">
           <div class="card-title"><div><p class="step">PHÂN BỔ THAY ĐỔI</p><h3>Điểm cần theo dõi</h3></div><span class="period" id="period-label">Dữ liệu minh hoạ</span></div>
@@ -88,6 +109,8 @@
             <label class="search"><span>⌕</span><input id="search-input" type="search" placeholder="Tìm model..." /></label>
             <select id="type-filter" aria-label="Lọc loại thay đổi">
               <option value="all">Tất cả loại thay đổi</option>
+              <option value="Model biến mất">Model biến mất</option>
+              <option value="Model mới xuất hiện">Model mới xuất hiện</option>
               <option value="Đổi số lượng">Đổi số lượng</option>
               <option value="Pull in">Pull in</option>
               <option value="Push out">Push out</option>

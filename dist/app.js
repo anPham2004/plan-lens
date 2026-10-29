@@ -87,7 +87,19 @@ function render() {
   $("#quantity-count").textContent = format(stats["Đổi số lượng"]);
   $("#pull-count").textContent = format(stats["Pull in"]);
   $("#push-count").textContent = format(stats["Push out"]);
-  renderDistribution(); renderInsight(); renderTable();
+  renderModelEvents(); renderDistribution(); renderInsight(); renderTable();
+}
+
+function renderModelEvents() {
+  const renderList = (records, target, emptyMessage, totalLabel) => {
+    $(target).innerHTML = records.length
+      ? records.map((record) => `<li><strong>${escapeHtml(record.model)}</strong><span>${totalLabel}: <b>${format(record.total)}</b></span></li>`).join("")
+      : `<li class="empty-event-list">${emptyMessage}</li>`;
+  };
+  $("#missing-list-count").textContent = format(report.missing.length);
+  $("#appeared-list-count").textContent = format(report.appeared.length);
+  renderList(report.missing, "#missing-list", "Không có model nào biến mất.", "SL cũ");
+  renderList(report.appeared, "#appeared-list", "Không có model mới xuất hiện.", "SL mới");
 }
 
 function renderDistribution() {
@@ -109,13 +121,31 @@ function renderInsight() {
 
 function filteredChanges() {
   const term = $("#search-input").value.trim().toUpperCase(); const type = $("#type-filter").value;
-  return report.changes.filter((row) => (!term || row.model.toUpperCase().includes(term)) && (type === "all" || row.type === type));
+  return comparisonRows().filter((row) => (!term || row.model.toUpperCase().includes(term)) && (type === "all" || row.type === type));
+}
+
+function comparisonRows() {
+  return [
+    ...report.missing.map((record) => ({ model: record.model, type: "Model biến mất", oldTotal: record.total, newTotal: null, delta: null, shift: null })),
+    ...report.appeared.map((record) => ({ model: record.model, type: "Model mới xuất hiện", oldTotal: null, newTotal: record.total, delta: null, shift: null })),
+    ...report.changes,
+  ];
+}
+
+function pillClass(type) {
+  return ({
+    "Model biến mất": "pill-missing",
+    "Model mới xuất hiện": "pill-new",
+    "Đổi số lượng": "pill-qty",
+    "Pull in": "pill-pull",
+    "Push out": "pill-push",
+  })[type];
 }
 
 function renderTable() {
   const rows = filteredChanges(); const shown = allVisible ? rows : rows.slice(0, 12);
-  $("#changes-body").innerHTML = shown.length ? shown.map((row) => `<tr><td>${escapeHtml(row.model)}</td><td><span class="change-pill ${row.type === "Đổi số lượng" ? "pill-qty" : row.type === "Pull in" ? "pill-pull" : "pill-push"}">${row.type}</span></td><td class="number">${format(row.oldTotal)}</td><td class="number">${format(row.newTotal)}</td><td class="number ${row.delta > 0 ? "positive" : row.delta < 0 ? "negative" : "muted"}">${row.delta === null ? "—" : `${row.delta > 0 ? "+" : ""}${format(row.delta)}`}</td><td class="number ${row.shift > 0 ? "positive" : row.shift < 0 ? "negative" : "muted"}">${row.shift === null ? "—" : `${row.shift > 0 ? "+" : ""}${format(row.shift)}`}</td></tr>`).join("") : `<tr><td colspan="6" class="muted">Không có model phù hợp với bộ lọc.</td></tr>`;
-  $("#row-count").textContent = `Hiển thị ${Math.min(shown.length, rows.length)} / ${rows.length} thay đổi`;
+  $("#changes-body").innerHTML = shown.length ? shown.map((row) => `<tr><td>${escapeHtml(row.model)}</td><td><span class="change-pill ${pillClass(row.type)}">${row.type}</span></td><td class="number">${format(row.oldTotal)}</td><td class="number">${format(row.newTotal)}</td><td class="number ${row.delta > 0 ? "positive" : row.delta < 0 ? "negative" : "muted"}">${row.delta === null ? "—" : `${row.delta > 0 ? "+" : ""}${format(row.delta)}`}</td><td class="number ${row.shift > 0 ? "positive" : row.shift < 0 ? "negative" : "muted"}">${row.shift === null ? "—" : `${row.shift > 0 ? "+" : ""}${format(row.shift)}`}</td></tr>`).join("") : `<tr><td colspan="6" class="muted">Không có model phù hợp với bộ lọc.</td></tr>`;
+  $("#row-count").textContent = `Hiển thị ${Math.min(shown.length, rows.length)} / ${rows.length} mục cần theo dõi`;
   const showAll = $("#show-all-button"); showAll.hidden = rows.length <= 12; showAll.textContent = allVisible ? "Thu gọn" : `Xem tất cả (${rows.length})`;
 }
 
@@ -146,7 +176,7 @@ function analyzeWorkbook() {
 }
 
 function exportCsv() {
-  const rows = [["Model", "Loại thay đổi", "Tổng SL cũ", "Tổng SL mới", "Tăng/Giảm SL", "Số ngày Pull/Push"], ...report.changes.map((row) => [row.model, row.type, row.oldTotal, row.newTotal, row.delta ?? "", row.shift ?? ""])];
+  const rows = [["Model", "Loại thay đổi", "Tổng SL cũ", "Tổng SL mới", "Tăng/Giảm SL", "Số ngày Pull/Push"], ...comparisonRows().map((row) => [row.model, row.type, row.oldTotal ?? "", row.newTotal ?? "", row.delta ?? "", row.shift ?? ""])];
   const csv = "\ufeff" + rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); const link = document.createElement("a"); link.href = url; link.download = "bao-cao-thay-doi-ke-hoach.csv"; link.click(); URL.revokeObjectURL(url); toast("Đã tải báo cáo CSV.");
 }
@@ -154,4 +184,10 @@ function exportCsv() {
 $("#file-input").addEventListener("change", (event) => event.target.files[0] && openFile(event.target.files[0]));
 const dropzone = $("#dropzone"); ["dragenter", "dragover"].forEach((event) => dropzone.addEventListener(event, (e) => { e.preventDefault(); dropzone.classList.add("dragging"); })); ["dragleave", "drop"].forEach((event) => dropzone.addEventListener(event, (e) => { e.preventDefault(); dropzone.classList.remove("dragging"); })); dropzone.addEventListener("drop", (event) => event.dataTransfer.files[0] && openFile(event.dataTransfer.files[0]));
 $("#analyze-button").addEventListener("click", analyzeWorkbook); $("#search-input").addEventListener("input", () => { allVisible = false; renderTable(); }); $("#type-filter").addEventListener("change", () => { allVisible = false; renderTable(); }); $("#show-all-button").addEventListener("click", () => { allVisible = !allVisible; renderTable(); }); $("#export-button").addEventListener("click", exportCsv);
+document.querySelectorAll(".event-filter-button").forEach((button) => button.addEventListener("click", () => {
+  $("#type-filter").value = button.dataset.eventType;
+  allVisible = true;
+  renderTable();
+  $(".changes-section").scrollIntoView({ behavior: "smooth", block: "start" });
+}));
 render();
